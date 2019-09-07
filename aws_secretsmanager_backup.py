@@ -19,7 +19,8 @@ def main():
     secrets_client = boto3.client('secretsmanager')
 
     for secret in get_secrets(secrets_client):
-        print(secret['Name'])
+        secret_value = secrets_client.get_secret_value(SecretId=secret['Name'])['SecretString']
+        print(f"Name: {secret['Name']}, Value: {secret_value}")
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
