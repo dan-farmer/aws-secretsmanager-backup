@@ -7,6 +7,7 @@
 
 import argparse
 import logging
+import json
 import boto3
 
 def main():
@@ -18,9 +19,16 @@ def main():
 
     secrets_client = boto3.client('secretsmanager')
 
+    secrets = {'Secrets': []}
+
     for secret in get_secrets(secrets_client):
         secret_value = secrets_client.get_secret_value(SecretId=secret['Name'])['SecretString']
-        print(f"Name: {secret['Name']}, Value: {secret_value}")
+        secrets['Secrets'].append({
+            'Name': secret['Name'],
+            'SecretString': secret_value
+            })
+
+    print(json.dumps(secrets, indent=2, sort_keys=True))
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
