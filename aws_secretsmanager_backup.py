@@ -31,8 +31,14 @@ def main():
     elif args.mode == 'import':
         secrets = json.load(sys.stdin)
         for secret in secrets['Secrets']:
-            secrets_client.update_secret(SecretId=secret['Name'],
-                                         SecretString=secret['SecretString'])
+            try:
+                secrets_client.update_secret(SecretId=secret['Name'],
+                                             SecretString=secret['SecretString'])
+            except secrets_client.exceptions.ResourceNotFoundException:
+                logging.warning('Secret %s does not exist, creating it', secret['Name'])
+                secrets_client.create_secret(Name=secret['Name'],
+                                             SecretString=secret['SecretString'])
+
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
