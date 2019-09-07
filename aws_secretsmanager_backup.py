@@ -7,6 +7,7 @@
 
 import argparse
 import logging
+import sys
 import json
 import boto3
 
@@ -19,16 +20,25 @@ def main():
 
     secrets_client = boto3.client('secretsmanager')
 
-    secrets = {'Secrets': []}
+    if args.mode == 'dump':
+        secrets = {'Secrets': []}
+        for secret in get_secrets(secrets_client):
+            secret_value = secrets_client.get_secret_value(SecretId=secret['Name'])['SecretString']
+            secrets['Secrets'].append({'Name': secret['Name'],
+                                       'SecretString': secret_value})
+        print(json.dumps(secrets, indent=2, sort_keys=True))
 
-    for secret in get_secrets(secrets_client):
-        secret_value = secrets_client.get_secret_value(SecretId=secret['Name'])['SecretString']
-        secrets['Secrets'].append({
-            'Name': secret['Name'],
-            'SecretString': secret_value
-            })
+    elif args.mode == 'import':
+        secrets = json.load(sys.stdin)
+        for secret in secrets['Secrets']:
+            try:
+                secrets_client.update_secret(SecretId=secret['Name'],
+                                             SecretString=secret['SecretString'])
+            except secrets_client.exceptions.ResourceNotFoundException:
+                logging.warning('Secret %s does not exist, creating it', secret['Name'])
+                secrets_client.create_secret(Name=secret['Name'],
+                                             SecretString=secret['SecretString'])
 
-    print(json.dumps(secrets, indent=2, sort_keys=True))
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
@@ -46,6 +56,8 @@ def parse_args():
 
     Return args namespace"""
     parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--mode', type=str, required=True, choices=['dump', 'import'],
+                        help='Dump secrets to stdout (backup) or import from stdin (restore)')
     parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging/output verbosity')
