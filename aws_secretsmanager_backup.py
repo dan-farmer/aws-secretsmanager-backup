@@ -16,7 +16,8 @@ def main():
 
     args = parse_args()
 
-    secrets_client = boto3.client('secretsmanager')
+    boto_session = boto3.Session(profile_name=args.profile, region_name=args.region)
+    secrets_client = boto_session.client('secretsmanager')
 
     if args.mode == 'export':
         secrets = {'Secrets': []}
@@ -62,16 +63,24 @@ def parse_args():
     Return args namespace
     """
     parser = argparse.ArgumentParser()
+
     parser.add_argument('-m', '--mode', type=str, default='export', choices=['export', 'import'],
                         help='Export secrets (default) or import')
+    parser.add_argument('-l', '--loglevel', type=str,
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='Logging/output verbosity')
+
     file_group = parser.add_mutually_exclusive_group(required=False)
     file_group.add_argument('-i', '--infile', type=argparse.FileType('r'), default=sys.stdin,
                             help='Filename for import (default: stdin)')
     file_group.add_argument('-o', '--outfile', type=argparse.FileType('w'), default=sys.stdout,
                             help='Filename for export (default: stdout)')
-    parser.add_argument('-l', '--loglevel', type=str,
-                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                        help='Logging/output verbosity')
+
+    aws_group = parser.add_argument_group(title='AWS configuration options')
+    aws_group.add_argument('-p', '--profile', type=str, default=None,
+                           help='Override AWS credentials/configuration profile')
+    aws_group.add_argument('-r', '--region', type=str, default=None,
+                           help='Override AWS region')
 
     args = parser.parse_args()
 
