@@ -26,7 +26,7 @@ def main():
 
     if args.mode == 'export':
         secrets = {'Secrets': []}
-        for secret in get_secrets(secrets_client):
+        for secret in sort_secrets(get_secrets(secrets_client), args.sort):
             if regex_filter and not regex_filter.search(secret['Name']):
                 continue
 
@@ -56,6 +56,14 @@ def main():
                 secrets_client.create_secret(Name=secret['Name'],
                                              SecretString=secret['SecretString'])
 
+def sort_secrets(secrets, sort_mode):
+    sort_key = lambda secret: secret['Name']
+    if sort_mode == 'ascending':
+        return sorted(secrets, key=sort_key)
+    elif sort_mode == 'descending':
+        return sorted(secrets, reverse=True, key=sort_key)
+    else:
+        return secrets
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
@@ -82,6 +90,8 @@ def parse_args():
                         help='Logging/output verbosity')
     parser.add_argument('-f', '--filter', type=str, default=None, metavar='REGEX',
                         help='Filter secrets to import/export using a supplied regular expression')
+    parser.add_argument('-s', '--sort', type=str, default=None, choices=['ascending', 'descending'],
+                        help='Sort secrets to export in ascending or descending order')
 
     file_group = parser.add_mutually_exclusive_group(required=False)
     file_group.add_argument('-i', '--infile', type=argparse.FileType('r'), default=sys.stdin,

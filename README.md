@@ -10,7 +10,8 @@ Simple dump/import backup for AWS Secrets Manager Secrets
 ```
 aws_secretsmanager_backup.py [-h] [-m {export,import}]
                              [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-                             [-f FILTER]
+                             [-f REGEX]
+                             [-s {ascending,descending}]
                              [-i INFILE | -o OUTFILE]
                              [-p PROFILE]
                              [-r REGION]
@@ -23,6 +24,8 @@ optional arguments:
                         Logging/output verbosity
   -f REGEX, --filter REGEX
                         Filter secrets to import/export using a supplied regular expression
+  -s {ascending,descending}, --sort {ascending,descending}
+                        Sort secrets to export in ascending or descending order
   -i INFILE, --infile INFILE
                         Filename for import (default: stdin)
   -o OUTFILE, --outfile OUTFILE
