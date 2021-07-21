@@ -7,6 +7,7 @@
 
 import argparse
 import logging
+import re
 import sys
 import json
 import boto3
@@ -19,9 +20,16 @@ def main():
     boto_session = boto3.Session(profile_name=args.profile, region_name=args.region)
     secrets_client = boto_session.client('secretsmanager')
 
+    regex_filter = None
+    if args.filter:
+        regex_filter = re.compile(args.filter)
+
     if args.mode == 'export':
         secrets = {'Secrets': []}
         for secret in get_secrets(secrets_client):
+            if regex_filter and not regex_filter.search(secret['Name']):
+                continue
+
             logging.info('Getting SecretString for %s', secret['Name'])
             secret_value = secrets_client.get_secret_value(SecretId=secret['Name'])['SecretString']
             secrets['Secrets'].append({'Name': secret['Name'],
@@ -33,6 +41,9 @@ def main():
         logging.info('Loading Secrets from infile %s', args.infile.name)
         secrets = json.load(args.infile)
         for secret in secrets['Secrets']:
+            if regex_filter and not regex_filter.search(secret['Name']):
+                continue
+
             try:
                 logging.info('Updating Secret %s with SecretString %s',
                              secret['Name'], secret['SecretString'])
@@ -69,6 +80,8 @@ def parse_args():
     parser.add_argument('-l', '--loglevel', type=str,
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging/output verbosity')
+    parser.add_argument('-f', '--filter', type=str, default=None, metavar='REGEX',
+                        help='Filter secrets to import/export using a supplied regular expression')
 
     file_group = parser.add_mutually_exclusive_group(required=False)
     file_group.add_argument('-i', '--infile', type=argparse.FileType('r'), default=sys.stdin,
