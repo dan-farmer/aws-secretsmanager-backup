@@ -62,8 +62,8 @@ def sort_secrets(secrets, sort_mode):
         return sorted(secrets, key=sort_key)
     elif sort_mode == 'descending':
         return sorted(secrets, reverse=True, key=sort_key)
-    else:
-        return secrets
+        
+    return secrets
 
 def get_secrets(secrets_client):
     """Iterator for secrets.
