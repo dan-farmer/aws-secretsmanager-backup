@@ -11,6 +11,7 @@ import re
 import sys
 import json
 import boto3
+from os import getenv
 
 def main():
     """Export or import AWS Secrets Manager Secret names and values."""
