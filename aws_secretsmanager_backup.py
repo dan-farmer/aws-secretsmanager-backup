@@ -17,7 +17,10 @@ def main():
 
     args = parse_args()
 
-    boto_session = boto3.Session(profile_name=args.profile, region_name=args.region)
+    region = args.region or getenv('AWS_REGION')
+    profile_name = args.profile or getenv('AWS_PROFILE')
+
+    boto_session = boto3.Session(profile_name=profile_name, region_name=region)
     secrets_client = boto_session.client('secretsmanager')
 
     regex_filter = None
